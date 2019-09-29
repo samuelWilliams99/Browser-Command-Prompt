@@ -1,0 +1,25 @@
+{
+  "name": "cmd",
+  "version": "1.0.0",
+  "description": "Cmd thing",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js push",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://git.heroku.com/secret-eyrie-92934.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^2.0.1",
+    "crypto-js": "^3.1.9-1",
+    "express": "^4.16.3",
+    "git-commits": "^1.3.0",
+    "mongodb": "^3.1.0-beta4",
+    "npm": "^6.0.1",
+    "socketio": "^1.0.0"
+  }
+}

@@ -1,0 +1,50 @@
+html,body { -webkit-text-size-adjust:none; overflow:hidden; height:100%; }
+
+*{margin:0;}
+
+#container{
+    width: 99%;
+    overflow: hidden;
+    padding-right: 15px;
+}
+
+body {
+	background-color: #000000;
+	color: white;
+	animation-name: bg_init_colchange;
+    animation-duration: 0.7s;
+}
+
+@keyframes bg_init_colchange {
+    0%   {background-color: white;}
+    100% {background-color: #000000;}
+}
+
+#mainText {
+	padding:0px;
+	width:100%;
+}
+
+p,pre {
+	margin:0px;
+	font-family: "Consolas", monospace;
+	font-size: 1.2em;
+	font-weight: 500;
+	display:inline;
+}
+
+input {
+    background: transparent;
+    border: none;
+    opacity:0;
+	filter:alpha(opacity=0);
+}
+
+.line {
+}
+
+input[type='text'],
+input[type='number'],
+textarea {
+	font-size: 16px;
+}
