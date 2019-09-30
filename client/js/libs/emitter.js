@@ -29,5 +29,12 @@ define({
 			throw "Event " + event + " does not exist";
 		}	
 	},
+	remove: function(event, id) {
+		if(eventExists(event)) {
+			delete events[event][id]
+		} else {
+			throw "Event " + event + " does not exist";
+		}
+	},
 	getTable: function() { return events; }
 })
