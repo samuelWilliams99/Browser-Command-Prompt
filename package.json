@@ -18,10 +18,19 @@
     "express": "^4.16.3",
     "git-commits": "^1.3.0",
     "mongodb": "^3.1.0-beta4",
-    "npm": "^6.0.1",
+    "npm": "^6.11.3",
     "socketio": "^1.0.0"
   },
-  "keywords": ["Command Line", "CMD", "Virtual", "node.js", "requireJS", "express", "socketio", "socket.io"],
+  "keywords": [
+    "Command Line",
+    "CMD",
+    "Virtual",
+    "node.js",
+    "requireJS",
+    "express",
+    "socketio",
+    "socket.io"
+  ],
   "bugs": "https://github.com/samuelWilliams99/Browser-Command-Prompt/issues",
   "contributors": []
 }

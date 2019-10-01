@@ -1,15 +1,4 @@
-define(["console", "emitter"], function(console, emitter) {
-
-	class EmitterProxy {
-		constructor(name) {
-			this._name = name;
-			this._eventNames = [];
-		}
-		registerEvent(event) {
-			emitter.registerEvent(event);
-
-		}
-	}
+define(["console", "emitter", "helper"], function(console, emitter, helper) {
 
 	class Program {
 		constructor(name, aliases = [], desc = "Unknown", usage = "Unknown") {
@@ -17,7 +6,7 @@ define(["console", "emitter"], function(console, emitter) {
 			this._aliases = aliases;
 			this._desc = desc;
 			this._usage = usage;
-			this.emitter = new EmitterProxy(name);
+			this.emitter = new emitter.EmitterProxy(name);
 		}
 		onStart(f) {
 			this._start = f;
@@ -35,7 +24,7 @@ define(["console", "emitter"], function(console, emitter) {
 
 		stop(errCode) {
 			this._stop(errCode);
-			this.emitter.removeAll()
+			this.emitter.clear();
 		}
 	}
 

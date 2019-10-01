@@ -5,7 +5,8 @@ requirejs.config({
         socketio: '/socket.io/socket.io.js',
         console: 'base/console',
         emitter: 'libs/emitter',
-        program: 'base/program_manager'
+        program: 'base/program_manager',
+        helper: "libs/helper"
     }
 });
 
