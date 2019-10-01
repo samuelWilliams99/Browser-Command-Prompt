@@ -6,6 +6,7 @@ html,body { -webkit-text-size-adjust:none; overflow:hidden; height:100%; }
     width: 99%;
     overflow: hidden;
     padding-right: 15px;
+    height: 100%;
 }
 
 body {
@@ -18,11 +19,6 @@ body {
 @keyframes bg_init_colchange {
     0%   {background-color: white;}
     100% {background-color: #000000;}
-}
-
-#mainText {
-	padding:0px;
-	width:100%;
 }
 
 p,pre {
@@ -41,6 +37,8 @@ input {
 }
 
 .line {
+	position:absolute;
+	width: 100%;
 }
 
 input[type='text'],

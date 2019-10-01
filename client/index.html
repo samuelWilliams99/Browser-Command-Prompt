@@ -4,27 +4,12 @@
 		<link rel="shortcut icon" type="image/png" href="/favicon.png"/>
 
 		<link rel="stylesheet" href="css/index.css" type="text/css">
-		<!-- JQuery -->
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-		<!-- Socket IO -->
-    	<script src="/socket.io/socket.io.js"></script>
-    	<!-- CryptoJS -->
-    	<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.2/rollups/aes.js"></script>
 
-		<script>
-			var socket = io();
-		</script>
-		
-
-		<script src="js/main.js"></script>
+		<!-- Require -->
+		<script data-main="js/main" src="js/require.js"></script>
 	</head>
 
 	<body>
-		<div id="container">
-			<div id="mainText"></div>
-			<div id="typeText">
-				<input id="input" type="text" oninput="updateInput();" autocomplete='off'>
-			</div>
-		</div>
+		<div id="container"></div>
 	</body>
 </html>
