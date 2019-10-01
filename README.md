@@ -1,7 +1,9 @@
 # Browser-Command-Prompt
-Browser Command Prompt (BCP), as the name suggests, is a command prompt built from scratch in javascript. It will act as a host for my future projects (ARM Assembler, JSKell: a javascript haskell-like language compiler, etc.)
-This is a rewrite of [the previous version](https://secret-eyrie-92934.herokuapp.com/) using a requireJS, a proper program manager, and more shell features. 
-The master branch of this project is hosted [here](http://browsercmd.com/)
+Browser Command Prompt (BCP), as the name suggests, is a command prompt built from scratch in javascript.  
+It will act as a host for my future projects (ARM Assembler, JSKell: a javascript haskell-like language compiler, etc.)  
+This is a rewrite of [the previous version](https://secret-eyrie-92934.herokuapp.com/) using a requireJS, a proper program manager, and more shell features.  
+The master branch of this project is hosted [here](http://browsercmd.com/)  
+Note: This project serves no real purpose other than as a challenge to myself. I'm making this for fun, not for utility.
 
 ## Features
 - Program manager, which will keep track of permissions, events, socketio, etc. for any program
