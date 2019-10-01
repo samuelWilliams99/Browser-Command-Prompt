@@ -1,4 +1,3 @@
-# specify the node base image with your desired version node:<version>
 FROM node:12
 
 ENV CMD_PATH /home/node/cmd
