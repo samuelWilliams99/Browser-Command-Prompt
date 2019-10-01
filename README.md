@@ -15,7 +15,7 @@ Note: This project serves no real purpose other than as a challenge to myself. I
 
 ## Installation
 - Install [Docker](https://www.docker.com/)
-- Run build.bat / build.sh, depending on your OS
+- Run build.bat / build.sh, depending on your OS (you may need to run `chmod +x ./build.sh` on linux)
 
 ## Usage
 Once running, you'll be able to connect to localhost:5000, you can then run "help" to see all the programs
