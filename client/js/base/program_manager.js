@@ -1,4 +1,4 @@
-define(["console", "emitter", "helper"], function(console, emitter, helper) {
+define(["console", "emitter", "helper"], function(c, emitter, helper) {
 
 	class Program {
 		constructor(name, aliases = [], desc = "Unknown", usage = "Unknown") {
@@ -19,15 +19,19 @@ define(["console", "emitter", "helper"], function(console, emitter, helper) {
 		}
 
 		start(...args) {
-			this._start(...args);
+			if(this._start) {
+				this._start(...args);
+			}
+			this.emitter.enable();
 		}
 
 		stop(errCode) {
-			this._stop(errCode);
-			this.emitter.clear();
+			if(this._stop) {
+				this._stop(errCode);
+			}
+			this.emitter.disable();
 		}
 	}
-
 
 	return {
 

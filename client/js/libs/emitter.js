@@ -1,3 +1,20 @@
+/*
+Emitters are used for event handling.
+An event must be registered in order to be triggered, or to add a handler to it
+Add handlers with:
+emitter.on(eventName, uniqueID, handler)
+Remove with:
+emitter.remove(eventName, uniqueID)
+
+events can be triggered with arguments, e.g. emitter.emit("keyPress", key)
+
+EmitterProxy used to group a programs event handlers so they can be added/removed when a program starts/ends
+EmitterProxy has all same funcs are emitter, along with EmitterProxy.enable() and EmitterProxy.disable().
+Any events added to EmitterProxy while enabled are not saved.
+Any events added while disabled are saved and added when EmitterProxy is enabled.
+*/
+
+
 var events = {};
 var eventNames = [];
 
@@ -32,6 +49,7 @@ define(["helper"], function(helper) {
 			}
 		},
 		on: function(event, id, cb) {
+			console.log(event, id, cb);
 			if(eventExists(event)) {
 				events[event][id] = cb;
 			} else {
@@ -45,40 +63,29 @@ define(["helper"], function(helper) {
 				throw "Event " + event + " does not exist";
 			}
 		},
-		getTable: function() { return events; }
+		getTable: function() { return {events: helper.clone(events), eventNames: eventNames.slice()}; }
 	}
 
 	class EmitterProxy {
 		constructor(name) {
 			this._name = name;
 			this._eventNames = [];
-			this._events = [];
-		}
-
-		getCallbackIdx(event, id) {
-			for(var i=0; i<this._events.length; i++) {
-				var e = this._events[i];
-				if(e.event == event && e.id == id) {
-					return i;
-				}
-			}
-			return null;
-		}
-
-		getCallback(event, id) {
-			var idx = this.getCallbackIdx(event, id)
-			if(!idx) return null;
-			return this._events[idx];
+			this._events = {};
+			this.enabled = false;
 		}
 
 		registerEvent(event) {
-			emitter.registerEvent(event);
 			this._eventNames.push(event);
+			if(this.enabled) {
+				emitter.registerEvent(event);
+			}
 		}
 
 		unregisterEvent(event) {
-			emitter.unregisterEvent(event);
 			helper.removeByValue(this._eventNames, event);
+			if(this.enabled) {
+				emitter.unregisterEvent(event);
+			}
 		}
 
 		emit(event, ...args) {
@@ -90,42 +97,71 @@ define(["helper"], function(helper) {
 
 		on(event, id, f) {
 			id = this._name + "." + id;
-			var dontPush = false;
-			if(this.getCallback(event, id)) {
-				dontPush = true;
-			}
-			emitter.on(event, id, f);
-			if(!dontPush){
-				this._events.push({event: event, id: id});
+			if(!this._events[event]) this._events[event] = {};
+			this._events[event][id] = f;
+			if(this.enabled) {
+				emitter.on(event, id, f);
 			}
 		}
 
 		remove(event, id) {
 			id = this._name + "." + id;
-			var i = this.getCallbackIdx(event, id);
-			if(!i) return;
-			delete this._events[i];
+			if(this._events[event]) {
+				delete this._events[event][id];
+			}
+			if(this.enabled) {
+				emitter.remove(event, id, f);
+			}
 		}
 
 		getTable() {
-			return this._events;
+			return {events: helper.clone(this._events), eventNames: this._eventNames.slice()};
 		}
 
-		removeAll() {
-			for(var e of this._events) {
-				emitter.remove(e.event, e.id);
+		registerAll() {
+			for(let e of this._eventNames) {
+				emitter.registerEvent(e);
 			}
-			this._events = [];
 		}
 
 		unregisterAll() {
 			for(var e of this._eventNames) {
 				emitter.unregisterEvent(e);
 			}
-			this._eventNames = [];
 		}
 
-		clear() {
+		onAll() {
+			for(var event in this._events) {
+				for(var id in this._events[event]) {
+					emitter.on(event, id, this._events[event][id]);
+				}
+			}
+		}
+
+		removeAll() {
+			for(var event in this._events) {
+				for(var id in this._events[event]) {
+					emitter.remove(event, id);
+				}
+			}
+		}
+
+		enable() {
+			if(this.enabled) return;
+			if(this._prevEvents) {
+				this._events = this._prevEvents;
+				this._eventNames = this._prevEventNames;
+			}
+			this._prevEvents = helper.clone(this._events);
+			this._prevEventNames = helper.clone(this._eventNames);
+			this.enabled = true;
+			this.registerAll();
+			this.onAll();
+		}
+
+		disable() {
+			if(!this.enabled) return;
+			this.enabled = false;
 			this.removeAll();
 			this.unregisterAll();
 		}
