@@ -1,29 +1,55 @@
+/*
+Timer library that calls a function every x seconds, reps times
+timer.create(uniqueID, delay, reps, f)
+if reps 0, runs infinite times
+delay in seconds
+f takes in rep number
+
+timer.remove/timer.stop(uniqueID)
+
+timer.repsLeft(uniqueID) -- repititions left
+
+timer.exists
+
+
+TimerProxy, sam as timer lib, but adds enable and disable, acts same as EmitterProxy
+*/
+
+
 var timers = {};
 
 define(["helper"], function (helper) {
 	var timer = {
 		create: function(id, delay, reps, f) {
+			// Remove old if it exists
 			var didReplace = false;
 			if (timers[id]) {
 				timer.remove(id);
 				didReplace = true;
 			}
+
+			// create table entry
 			timers[id] = {name: id, index: 0, repsLeft: reps, delay: delay, func: f};
 			var self = timers[id];
+			// create interval itself
 			timers[id].interval = setInterval(function() { 
 				self.repsLeft--;
 				self.func(self.index);
 				self.index++;
+				// If negative, must have started at 0 to not be caught by if below, so run infinitely
 				if(self.repsLeft < 0) { return; }
+				// If less than 1 (0), its done, remove the timer
 				if(self.repsLeft < 1) {
 					timer.remove(self.name);
 				}
 			}, delay * 1000);
 			return didReplace;
 		},
+		// Other name for remove
 		stop: function(id) {timer.remove(id); },
 		remove: function(id) {
 			if(timers[id]) {
+				// Clear and delete
 				clearInterval(timers[id].interval);
 				delete timers[id];
 				return true;
@@ -34,6 +60,7 @@ define(["helper"], function (helper) {
 		exists: function(id) {
 			return timers[id] ? timers[id].repsLeft > 0 : false;
 		},
+		// if delay passed in, replace and recreate interval. If reps pass in as well, replace as well
 		update: function(id, delay, reps) {
 			if(timers[id]) {
 				if(delay) {
@@ -102,6 +129,7 @@ define(["helper"], function (helper) {
 			}
 		}
 
+		// Create all timers in local table
 		enable() {
 			if(this._prevTimers) {
 				this._timers = this._prevTimers;
@@ -114,6 +142,7 @@ define(["helper"], function (helper) {
 			this._prevTimers = helper.clone(this._timers);
 		}
 
+		// remove all timers in local table
 		disable() {
 			for(let id in this._timers) {
 				timer.remove(id);
