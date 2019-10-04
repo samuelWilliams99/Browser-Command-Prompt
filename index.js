@@ -1,20 +1,27 @@
-const express = require('express');
-const app = express();
-const http = require('http').Server(app);
-const io = require('socket.io')(http);
-const fs = require('fs');
+const requirejs = require("requirejs");
 
-const PORT = process.env.PORT || 5000
-
-app.get('/', function(req, res){
-	res.sendFile(__dirname + '/client/index.html');
-	app.use(express.static(__dirname + '/client'));
+requirejs.config({
+    //Pass the top-level main.js/index.js require
+    //function to requirejs so that node modules
+    //are loaded relative to the top-level JS file.
+    nodeRequire: require
 });
 
+requirejs(["express", "http", "socket.io", "fs"], function(express, http, socket, fs) {
+	const app = express();
+	const server = http.Server(app);
+	const io = socket(server);
+
+	const PORT = process.env.PORT || 5000
+
+	app.get('/', function(req, res){
+		res.sendFile(__dirname + '/client/index.html');
+		app.use(express.static(__dirname + '/client'));
+	});
 
 
 
-
-http.listen(PORT, function(){
-  	console.log('listening on *:'+PORT);
+	server.listen(PORT, function(){
+	  	console.log('listening on *:'+PORT);
+	});
 });
