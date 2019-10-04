@@ -6,8 +6,8 @@ requirejs.config({
         console: 'base/console',
         emitter: 'libs/emitter',
         program: 'base/program_manager',
-        helper: "libs/helper",
-        timer: "libs/timer"
+        timer: "libs/timer",
+        helper: "libs/helper"
     }
 });
 
