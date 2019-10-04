@@ -2,18 +2,31 @@ requirejs.config({
     baseUrl: 'js',
     paths: {
         jquery: 'libs/jquery-3.4.1',
-        socketio: '/socket.io/socket.io.js',
+        "socket.io": '/socket.io/socket.io.js',
         console: 'base/console',
         emitter: 'libs/emitter',
         program: 'base/program_manager',
         timer: "libs/timer",
-        helper: "libs/helper"
+        helper: "libs/helper",
+        optional: "libs/optional"
     }
 });
 
-require(["jquery", "socketio", "timer", "emitter"], 
-function( $,        socket,     timer,   emitter) {
-    require(["console", "program"], function(c, p) {
-        
+// Put server/client indicator in global env
+__SERVER = false;
+__CLIENT = true;
+
+requirejs(["jquery", "socket.io", "timer", "emitter"], 
+function( $,        socketio,     timer,   emitter) {
+    var socket = socketio.connect();
+
+    // Reload if lost connect (on server reload)
+    socket.on("reconnect_attempt", function(){
+        location.reload();
+    })
+
+    requirejs(["console", "program"], function(c, p) {
+        p.setSocket(socket);
+
     })
 })
