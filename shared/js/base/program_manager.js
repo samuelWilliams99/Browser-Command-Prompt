@@ -1,4 +1,6 @@
 var socket;
+var processIDCounter = 0;
+var programs = [];
 
 define(["emitter", "timer", "helper"], function(emitter, timer, helper) {
 
@@ -7,46 +9,50 @@ define(["emitter", "timer", "helper"], function(emitter, timer, helper) {
 	emitter.registerEvent("PM.programsLoaded");
 
 	class Program {
+		#emitter = null;
+		#timer = null;
+		#useServer = false;
+
+		#name = "Unnamed";
+		#aliases = [];
+		#desc = "";
+		#usage = "";
+
 		constructor(name, aliases = [], desc = "Unknown", usage = "Unknown") {
-			this._name = name;
-			this._aliases = aliases;
-			this._desc = desc;
-			this._usage = usage;
-			this.emitter = new emitter.EmitterProxy(name);
-			this.timer = new timer.TimerProxy(name);
-		}
-		onStart(f) {
-			this._start = f;
-		}
-		onStop(f) {
-			this._stop = f;
+			this.#name = name;
+			this.#aliases = aliases;
+			this.#desc = desc;
+			this.#usage = usage;
+
+			this.#emitter = new emitter.EmitterProxy(name);
+			this.#timer = new timer.TimerProxy(name);
 		}
 		setUseServer(use) {
-			this._useServer = use;
+			this.#useServer = use;
 		}
-
-		start(...args) {
-			if(this._start) {
-				this._start(...args);
+		doStart(...args) {
+			if(this.start) {
+				this.start(...args);
 			}
 			this.emitter.enable();
 			this.timer.enable();
 		}
-
-		stop(errCode) {
-			if(this._stop) {
-				this._stop(errCode);
+		doStop(errCode) {
+			if(this.stop) {
+				this.stop(errCode);
 			}
 			this.emitter.disable();
 			this.timer.disable();
 		}
 
 		get name() {
-			return this._name;
+			return this.#name;
 		}
-
-		set name(whocares) {
-			throw "Cannot rename program after creation";
+		get emitter() {
+			return this.#emitter;
+		}
+		get timer() {
+			return this.#timer;
 		}
 	}
 
@@ -60,15 +66,41 @@ define(["emitter", "timer", "helper"], function(emitter, timer, helper) {
 		socket = s;
 	}
 
+	function getProcessID() {
+		return processIDCounter++;
+	}
+
+	function runProgram(name, ...args) {
+		for(let program of programs) {
+			if(program.Name == name || (program.Aliases && program.Aliases.indexOf(name) != -1)) {
+				var id = getProcessID();
+				var instance = new program(id);
+				instance.doStart(...args);
+				return id;
+			}
+		}
+
+		return -1;
+		
+	}
+
+	function registerProgram(program) {
+		programs.push(program);
+	}
+
 	function registerPrograms(programNames) {
 		programDirs = programNames.map(f => "optional!programs/" + f);
-		requirejs(programDirs, function(...progs) {
-			for(let k in progs) {
-				var prog = progs[k];
-				if(prog) {
-					emitter.emit("PM.programLoadSuccess", programNames[k]);
-				} else {
-					emitter.emit("PM.programLoadFail", programNames[k]);
+		requirejs(programDirs, function(...files) {
+			for(let k in files) {
+				var progs = files[k];
+				if(!Array.isArray(progs)) {progs = [progs];}
+				for(let prog of progs) {
+					if(prog && prog.prototype instanceof Program && prog.Name) {
+						registerProgram(prog);
+						emitter.emit("PM.programLoadSuccess", prog.Name);
+					} else {
+						emitter.emit("PM.programLoadFail", programNames[k]);
+					}
 				}
 			}
 			emitter.emit("PM.programsLoaded", programNames);
