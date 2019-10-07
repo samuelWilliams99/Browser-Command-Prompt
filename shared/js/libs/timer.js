@@ -19,20 +19,38 @@ TimerProxy, sam as timer lib, but adds enable and disable, acts same as EmitterP
 var timers = {};
 
 define(["helper"], function (helper) {
-	var timer = {
-		create: function(id, delay, reps, f, startIndex) {
-			// Remove old if it exists
-			var didReplace = false;
-			if (timers[id]) {
-				timer.remove(id);
-				didReplace = true;
-			}
+	class Timer {
+		index = 0;
+		func = null;
+		id = -1;
+		delay = 0;
+		repsLeft = 0;
+		interval = null;
+		constructor(id, delay, reps, f, startIndex) {
+			if(startIndex) { this.index = startIndex; }
+			this.id = id;
+			this.delay = delay;
+			this.repsLeft = reps;
+			this.func = f;
+			timers[id] = this;
+			this.makeInterval();
+		}
 
-			// create table entry
-			timers[id] = {name: id, index: (startIndex === undefined) ? 0 : startIndex, repsLeft: reps, delay: delay, func: f};
-			var self = timers[id];
+		remove() {
+			this.clearInterval();
+			delete timers[this.id];
+		}
+
+		clearInterval() {
+			if(this.interval) {
+				clearInterval(this.interval);
+			}
+		}
+
+		makeInterval() {
 			// create interval itself
-			timers[id].interval = setInterval(function() { 
+			var self = this;
+			this.interval = setInterval(function() { 
 				self.repsLeft--;
 				self.func(self.index);
 				self.index++;
@@ -40,17 +58,42 @@ define(["helper"], function (helper) {
 				if(self.repsLeft < 0) { return; }
 				// If less than 1 (0), its done, remove the timer
 				if(self.repsLeft < 1) {
-					timer.remove(self.name);
+					self.remove();
 				}
-			}, delay * 1000);
-			return didReplace;
+			}, this.delay * 1000);
+		}
+
+		update(delay, reps) {
+			if(delay) { this.delay = delay; }
+			if(reps) { this.repsLeft = reps; }
+			clearInterval();
+			makeInterval();
+		}
+
+		disable() {
+			this.clearInterval();
+		}
+		enable() {
+			this.makeInterval();
+		}
+	}
+
+	var timer = {
+		create: function(id, delay, reps, f, startIndex) {
+			// Remove old if it exists
+			if (timers[id]) {
+				timers[id].remove();
+			}
+
+			// create table entry
+			return new Timer(id, delay, reps, f, startIndex);
 		},
 		// Other name for remove
-		stop: function(id) {timer.remove(id); },
+		stop: function(id) { timer.remove(id); },
 		remove: function(id) {
 			if(timers[id]) {
 				// Clear and delete
-				clearInterval(timers[id].interval);
+				timers[id].remove();
 				delete timers[id];
 				return true;
 			} else {
@@ -58,21 +101,12 @@ define(["helper"], function (helper) {
 			}
 		},
 		exists: function(id) {
-			return timers[id] ? timers[id].repsLeft > 0 : false;
+			return timers[id] ? true : false
 		},
 		// if delay passed in, replace and recreate interval. If reps pass in as well, replace as well
 		update: function(id, delay, reps) {
 			if(timers[id]) {
-				if(delay) {
-					timers[id].delay = delay;
-					clearInterval(timers[id].interval);
-					setInterval(timers[id].func, delay);
-				}
-
-				if(reps) {
-					timers[id].repsLeft = reps;
-				}
-
+				timers[id].update(delay, reps);
 				return true;
 			} else {
 				return false;
@@ -85,13 +119,16 @@ define(["helper"], function (helper) {
 		curIndex: function(id) {
 			if(timers[id]) { return timers[id].index; }
 			return false;
+		},
+		getTimer: function(id) {
+			return timers[id];
 		}
 	}
 
 	class TimerProxy {
 		constructor(name) {
 			this._name = name;
-			this._timers = {};
+			this._timers = [];
 			this.enabled = false;
 		}
 
@@ -100,19 +137,18 @@ define(["helper"], function (helper) {
 		}
 
 		create(id, delay, reps, f) {
+			if(!this.enabled) return;
 			id = this.localName(id);
-			this._timers[id] = {name: id, delay: delay, reps: reps, func: f, index: 0};
-			if(this.enabled) {
-				timer.create(id, delay, reps, f);
-			}
+			this._timers.push(timer.create(id, delay, reps, f));
 		}
 
 		remove(id) {
+			if(!this.enabled) return;
 			id = this.localName(id);
-			delete this._timers[id];
-			if(this.enabled) {
-				timer.remove(id);
-			}
+			var t = timer.getTimer(id);
+			if(!t) return;
+			t.remove();
+			helper.removeByValue(this._timers, t);
 		}
 
 		exists(id) {
@@ -124,32 +160,34 @@ define(["helper"], function (helper) {
 		}
 
 		update(id, delay, reps) {
-			if(this._timers[id]) {
-				if(delay) {this._timers[id].delay = delay}
-				if(reps) {this._timers[id].repsLeft = reps}
-				if(this.enabled) {
-					timer.update(id, reps, delay);
-				}
+			if(!this.enabled) return;
+			var t = timer.getTimer(id);
+			if(t && this._timers.indexOf(t) != -1) {
+				timer.update(id, reps, delay);
 			}
 		}
 
 		// Create all timers in local table
 		enable() {
-			for(let id in this._timers) {
-				var self = this._timers[id];
-				timer.create(id, self.delay, self.reps, self.func, self.index);
+			this.enabled = true;
+			for(let t of this._timers) {
+				t.enable();
 			}
 		}
 
 		// remove all timers in local table
 		disable() {
-			for(let id in this._timers) {
-				if(timer.exists(id)) {
-					this._timers[id].reps = timer.repsLeft(id);
-					this._timers[id].index = timer.curIndex(id);
-				}
-				timer.remove(id);
+			this.enabled = false;
+			for(let t of this._timers) {
+				t.disable();
 			}
+		}
+
+		removeAll() {
+			for(let t of this._timers) {
+				timer.remove(t.id);
+			}
+			this._timers = [];
 		}
 	}
 

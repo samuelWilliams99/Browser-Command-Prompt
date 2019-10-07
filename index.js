@@ -36,7 +36,7 @@ requirejs(["express", "http", "socket.io", "program", "fs"], function(express, h
 	io.on('connection', function(socket){
 		console.log("Connection from " + socket.id);
 
-		socket.on("PM.requestPrograms", function() {
+		socket.once("PM.requestPrograms", function() {
 			socket.emit("PM.getPrograms", programNames);
 		});
 	});

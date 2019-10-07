@@ -1,12 +1,12 @@
-var socket;
-var processIDCounter = 0;
-var programs = [];
-var processes = [];
-
-var STATE_RUNNING = "Running";
-var STATE_SUSPENDED = "Suspended";
-
 define(["emitter", "timer", "helper"], function(emitter, timer, helper) {
+
+	var socket;
+	var processIDCounter = 0;
+	var programs = [];
+	var processes = [];
+
+	var STATE_RUNNING = "Running";
+	var STATE_SUSPENDED = "Suspended";
 
 	emitter.registerEvent("PM.programLoadSuccess");
 	emitter.registerEvent("PM.programLoadFail");
@@ -42,7 +42,7 @@ define(["emitter", "timer", "helper"], function(emitter, timer, helper) {
 		}
 
 		get instance() {
-			return this.#intance;
+			return this.#instance;
 		}
 
 		get timeCreated() {
@@ -60,31 +60,31 @@ define(["emitter", "timer", "helper"], function(emitter, timer, helper) {
 		#desc = "";
 		#usage = "";
 
-		constructor(name, aliases = [], desc = "Unknown", usage = "Unknown") {
+		constructor(id, name, aliases = [], desc = "Unknown", usage = "Unknown") {
 			this.#name = name;
 			this.#aliases = aliases;
 			this.#desc = desc;
 			this.#usage = usage;
 
-			this.#emitter = new emitter.EmitterProxy(name);
-			this.#timer = new timer.TimerProxy(name);
+			this.#emitter = new emitter.EmitterProxy(name + id);
+			this.#timer = new timer.TimerProxy(name + id);
 		}
 		setUseServer(use) {
 			this.#useServer = use;
 		}
 		doStart(...args) {
+			this.emitter.enable();
+			this.timer.enable();
 			if(this.start) {
 				this.start(...args);
 			}
-			this.emitter.enable();
-			this.timer.enable();
 		}
 		doStop(errCode) {
 			if(this.stop) {
 				this.stop(errCode);
 			}
 			this.emitter.disable();
-			this.timer.disable();
+			this.timer.removeAll();
 		}
 
 		get name() {
@@ -153,6 +153,7 @@ define(["emitter", "timer", "helper"], function(emitter, timer, helper) {
 
 	function registerProgram(program) {
 		programs.push(program);
+		runProgram(program.Name, "xd");
 	}
 
 	function registerPrograms(programNames) {
