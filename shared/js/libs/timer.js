@@ -20,7 +20,7 @@ var timers = {};
 
 define(["helper"], function (helper) {
 	var timer = {
-		create: function(id, delay, reps, f) {
+		create: function(id, delay, reps, f, startIndex) {
 			// Remove old if it exists
 			var didReplace = false;
 			if (timers[id]) {
@@ -29,7 +29,7 @@ define(["helper"], function (helper) {
 			}
 
 			// create table entry
-			timers[id] = {name: id, index: 0, repsLeft: reps, delay: delay, func: f};
+			timers[id] = {name: id, index: (startIndex === undefined) ? 0 : startIndex, repsLeft: reps, delay: delay, func: f};
 			var self = timers[id];
 			// create interval itself
 			timers[id].interval = setInterval(function() { 
@@ -81,6 +81,10 @@ define(["helper"], function (helper) {
 		repsLeft: function(id) {
 			if(timers[id]) { return timers[id].repsLeft; }
 			return false;
+		},
+		curIndex: function(id) {
+			if(timers[id]) { return timers[id].index; }
+			return false;
 		}
 	}
 
@@ -97,7 +101,7 @@ define(["helper"], function (helper) {
 
 		create(id, delay, reps, f) {
 			id = this.localName(id);
-			this._timers[id] = {name: id, delay: delay, reps: reps, func: f};
+			this._timers[id] = {name: id, delay: delay, reps: reps, func: f, index: 0};
 			if(this.enabled) {
 				timer.create(id, delay, reps, f);
 			}
@@ -131,20 +135,19 @@ define(["helper"], function (helper) {
 
 		// Create all timers in local table
 		enable() {
-			if(this._prevTimers) {
-				this._timers = this._prevTimers;
-			}
 			for(let id in this._timers) {
 				var self = this._timers[id];
-				timer.create(id, self.delay, self.reps, self.func);
+				timer.create(id, self.delay, self.reps, self.func, self.index);
 			}
-
-			this._prevTimers = helper.clone(this._timers);
 		}
 
 		// remove all timers in local table
 		disable() {
 			for(let id in this._timers) {
+				if(timer.exists(id)) {
+					this._timers[id].reps = timer.repsLeft(id);
+					this._timers[id].index = timer.curIndex(id);
+				}
 				timer.remove(id);
 			}
 		}

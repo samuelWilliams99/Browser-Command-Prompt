@@ -1,12 +1,54 @@
 var socket;
 var processIDCounter = 0;
 var programs = [];
+var processes = [];
+
+var STATE_RUNNING = "Running";
+var STATE_SUSPENDED = "Suspended";
 
 define(["emitter", "timer", "helper"], function(emitter, timer, helper) {
 
 	emitter.registerEvent("PM.programLoadSuccess");
 	emitter.registerEvent("PM.programLoadFail");
 	emitter.registerEvent("PM.programsLoaded");
+
+	class Process {
+		#id = -1;
+		#instance = null;
+		#timeCreated = -1;
+		#state = STATE_RUNNING;
+		constructor(program, ...args) {
+			this.#id = getProcessID();
+			this.#instance = new program(this.#id);
+			this.#instance.doStart(...args);
+			this.#timeCreated = Date.now();
+		}
+
+		suspend() {
+			this.#state = STATE_SUSPENDED;
+			this.#instance.emitter.disable();
+			this.#instance.timer.disable();
+		}
+
+		resume() {
+			this.#state = STATE_RUNNING;
+			this.#instance.emitter.enable();
+			this.#instance.timer.enable();
+		}
+
+		// Make all the private field getters (using private+getter to protect the members)
+		get id() {
+			return this.#id;
+		}
+
+		get instance() {
+			return this.#intance;
+		}
+
+		get timeCreated() {
+			return this.#timeCreated;
+		}
+	}
 
 	class Program {
 		#emitter = null;
@@ -70,16 +112,41 @@ define(["emitter", "timer", "helper"], function(emitter, timer, helper) {
 		return processIDCounter++;
 	}
 
-	function runProgram(name, ...args) {
+	function getProgram(name) {
 		for(let program of programs) {
 			if(program.Name == name || (program.Aliases && program.Aliases.indexOf(name) != -1)) {
-				var id = getProcessID();
-				var instance = new program(id);
-				instance.doStart(...args);
-				return id;
+				return program;
 			}
 		}
+		return null;
+	}
 
+	function getProcess(id) {
+		for(let p of processes) {
+			if(p.id == id) {
+				return p;
+			}
+		}
+		return null;
+	}
+
+	function getProcessesByName(name) {
+		var out = [];
+		for(let p of processes) {
+			if(p.instance.name == name) {
+				out.push(p);
+			}
+		}
+		return out;
+	}
+
+	function runProgram(name, ...args) {
+		var program = getProgram(name);
+		if(program){
+			var p = new Process(program, ...args);
+			processes.push(p);
+			return p.id;
+		}
 		return -1;
 		
 	}
@@ -109,6 +176,12 @@ define(["emitter", "timer", "helper"], function(emitter, timer, helper) {
 
 	return {
 		Program: Program,
-		setSocket: setSocket
+		setSocket: setSocket,
+		getPrograms: function() {
+			return helper.clone(programs);
+		},
+		getProgram: getProgram,
+		getProcess: getProcess,
+		getProcessesByName: getProcessesByName
 	}
 });

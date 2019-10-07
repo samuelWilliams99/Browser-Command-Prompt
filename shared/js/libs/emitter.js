@@ -148,12 +148,6 @@ define(["helper"], function(helper) {
 
 		enable() {
 			if(this.enabled) return;
-			if(this._prevEvents) {
-				this._events = this._prevEvents;
-				this._eventNames = this._prevEventNames;
-			}
-			this._prevEvents = helper.clone(this._events);
-			this._prevEventNames = helper.clone(this._eventNames);
 			this.enabled = true;
 			this.registerAll();
 			this.onAll();
