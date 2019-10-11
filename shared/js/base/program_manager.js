@@ -7,20 +7,29 @@ define(["emitter", "timer", "helper"], function(emitter, timer, helper) {
 
 	var STATE_RUNNING = "Running";
 	var STATE_SUSPENDED = "Suspended";
+	var STATE_STOPPED = "Stopped"
+
+	var STOPCODE_EXTERNAL = -1;
+	var STOPCODE_SUCCESS = 0;
+	var STOPCODE_FAIL = 1;
 
 	emitter.registerEvent("PM.programLoadSuccess");
 	emitter.registerEvent("PM.programLoadFail");
 	emitter.registerEvent("PM.programsLoaded");
 
+	// Basically all self explanatory
 	class Process {
 		#id = -1;
 		#instance = null;
 		#timeCreated = -1;
 		#state = STATE_RUNNING;
-		constructor(program, ...args) {
+		constructor(program, args, flags, switches) {
 			this.#id = getProcessID();
 			this.#instance = new program(this.#id);
-			this.#instance.doStart(...args);
+			[...data] = args;
+			this.#instance.doStart(...data);
+			this.#instance.flags = flags;
+			this.#instance.switches = switches;
 			this.#timeCreated = Date.now();
 		}
 
@@ -34,6 +43,15 @@ define(["emitter", "timer", "helper"], function(emitter, timer, helper) {
 			this.#state = STATE_RUNNING;
 			this.#instance.emitter.enable();
 			this.#instance.timer.enable();
+		}
+
+		stop(errCode) {
+			this.#state = STATE_STOPPED;
+			this.#instance.doStop(errCode);
+		}
+
+		getRunTime() {
+			return Date.now() - this.#timeCreated;
 		}
 
 		// Make all the private field getters (using private+getter to protect the members)
@@ -59,19 +77,22 @@ define(["emitter", "timer", "helper"], function(emitter, timer, helper) {
 		#aliases = [];
 		#desc = "";
 		#usage = "";
+		#id = -1;
 
 		constructor(id, name, aliases = [], desc = "Unknown", usage = "Unknown") {
 			this.#name = name;
 			this.#aliases = aliases;
 			this.#desc = desc;
 			this.#usage = usage;
-
+			this.#id = id;
+			// Proxies use name + id so they're unique per process
 			this.#emitter = new emitter.EmitterProxy(name + id);
 			this.#timer = new timer.TimerProxy(name + id);
 		}
 		setUseServer(use) {
 			this.#useServer = use;
 		}
+
 		doStart(...args) {
 			this.emitter.enable();
 			this.timer.enable();
@@ -79,12 +100,17 @@ define(["emitter", "timer", "helper"], function(emitter, timer, helper) {
 				this.start(...args);
 			}
 		}
+
 		doStop(errCode) {
 			if(this.stop) {
 				this.stop(errCode);
 			}
 			this.emitter.disable();
 			this.timer.removeAll();
+		}
+
+		exit(errCode) {
+			stopProcess(this.#id, errCode);
 		}
 
 		get name() {
@@ -98,6 +124,7 @@ define(["emitter", "timer", "helper"], function(emitter, timer, helper) {
 		}
 	}
 
+	// Socket Setter, if called for first time (socket not set beforehand), request programs and setup socket receiver
 	function setSocket(s) {
 		if(!socket) {
 			s.once("PM.getPrograms", function(ps) {
@@ -140,10 +167,12 @@ define(["emitter", "timer", "helper"], function(emitter, timer, helper) {
 		return out;
 	}
 
-	function runProgram(name, ...args) {
+	// Create process, push to processes stack
+	// returns -1 if program doesnt exist
+	function startProcess(name, args, flags, switches) {
 		var program = getProgram(name);
 		if(program){
-			var p = new Process(program, ...args);
+			var p = new Process(program, args, flags, switches);
 			processes.push(p);
 			return p.id;
 		}
@@ -151,16 +180,28 @@ define(["emitter", "timer", "helper"], function(emitter, timer, helper) {
 		
 	}
 
-	function registerProgram(program) {
-		programs.push(program);
-		runProgram(program.Name, "xd");
+	function stopProcess(id, errCode) {
+		errCode = errCode || STOPCODE_EXTERNAL;
+		var p = getProcess(id);
+		if(!p) return false;
+		p.stop(errCode);
+		helper.removeByValue(processes, p);
+		return true;
 	}
 
+	function registerProgram(program) {
+		programs.push(program);
+	}
+
+	// Takes list of program files
+	// Includes each file 
+	// Registers each program in each file, emits PM.programLoadSuccess on success, PM.programLoadFail on fail
 	function registerPrograms(programNames) {
 		programDirs = programNames.map(f => "optional!programs/" + f);
 		requirejs(programDirs, function(...files) {
 			for(let k in files) {
 				var progs = files[k];
+				if(!progs) {continue; }
 				if(!Array.isArray(progs)) {progs = [progs];}
 				for(let prog of progs) {
 					if(prog && prog.prototype instanceof Program && prog.Name) {
@@ -183,6 +224,8 @@ define(["emitter", "timer", "helper"], function(emitter, timer, helper) {
 		},
 		getProgram: getProgram,
 		getProcess: getProcess,
-		getProcessesByName: getProcessesByName
+		getProcessesByName: getProcessesByName,
+		startProcess: startProcess,
+		stopProcess: stopProcess
 	}
 });

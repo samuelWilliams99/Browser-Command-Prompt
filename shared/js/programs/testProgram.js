@@ -6,7 +6,7 @@ define(["program"], function(p) {
 		}
 
 		start(...args) {
-			this.timer.create("timer", 1, 3, function(i) {
+			this.timer.create("timer", 3, 3, function(i) {
 				console.log(i);
 			})
 		}
