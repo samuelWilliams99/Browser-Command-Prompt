@@ -1,4 +1,4 @@
-define(["emitter", "timer", "helper"], function(emitter, timer, helper) {
+define(["emitter", "timer", "net", "helper"], function(emitter, timer, net, helper) {
 
 	var socket;
 	var processIDCounter = 0;

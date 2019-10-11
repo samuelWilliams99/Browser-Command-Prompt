@@ -14,15 +14,14 @@ Any events added to EmitterProxy while enabled are not saved.
 Any events added while disabled are saved and added when EmitterProxy is enabled.
 */
 
-
-var events = {};
-var eventNames = [];
-
-function eventExists(event) {
-	return eventNames.indexOf(event) != -1;
-}
-
 define(["helper"], function(helper) {
+
+	var events = {};
+	var eventNames = [];
+
+	function eventExists(event) {
+		return eventNames.indexOf(event) != -1;
+	}
 
 	var emitter = {
 		registerEvent: function(event) {

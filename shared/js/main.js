@@ -7,6 +7,7 @@ requirejs.config({
         emitter: 'libs/emitter',
         program: 'base/program_manager',
         timer: "libs/timer",
+        net: "libs/net",
         helper: "libs/helper",
         optional: "libs/optional"
     }
