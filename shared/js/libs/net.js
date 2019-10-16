@@ -26,7 +26,7 @@ define(["helper"], function(helper) {
 
 		[...ret] = retVal; // Unpack
 
-		if(retVal && callId>=0) {
+		if(retVal !== undefined && callId>=0) {
 			netSend("response." + name + "." + callId, -1, ...ret);
 		}
 

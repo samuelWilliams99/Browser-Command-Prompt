@@ -16,74 +16,82 @@ Any events added while disabled are saved and added when EmitterProxy is enabled
 
 define(["helper"], function(helper) {
 
-	var events = {};
-	var eventNames = [];
-
-	function eventExists(event) {
-		return eventNames.indexOf(event) != -1;
-	}
-
-	var emitter = {
-		registerEvent: function(event) {
-			if(eventExists(event)) {
+	class Emitter {
+		#events = {};
+		#eventNames = [];
+		registerEvent(event) {
+			if(eventExists(this.#eventNames, event)) {
 				throw "Event " + event + " already exists";
 			}
-			eventNames.push(event);
-			events[event] = {};
-		},
-		unregisterEvent: function(event) {
-			if(!eventExists(event)) {
+			this.#eventNames.push(event);
+			this.#events[event] = {};
+		}
+		unregisterEvent(event) {
+			if(!eventExists(this.#eventNames, event)) {
 				throw "Event " + event + " does not exist";
 			}
-			helper.removeByValue(eventNames, event);
-			delete events[event];
-		},
-		emit: function(event, ...args) {
-			if(eventExists(event)) {
-				for(let key in events[event]) {
-					events[event][key](...args);
+			helper.removeByValue(this.#eventNames, event);
+			delete this.#events[event];
+		}
+		emit(event, ...args) {
+			if(eventExists(this.#eventNames, event)) {
+				for(let key in this.#events[event]) {
+					this.#events[event][key](...args);
 				}
 			} else {
 				throw "Event " + event + " does not exist";
 			}
-		},
-		on: function(event, id, cb) {
-			console.log(event, id, cb);
-			if(eventExists(event)) {
-				events[event][id] = cb;
+		}
+		on(event, id, cb) {
+			if(eventExists(this.#eventNames, event)) {
+				this.#events[event][id] = cb;
 			} else {
 				throw "Event " + event + " does not exist";
 			}	
-		},
-		remove: function(event, id) {
-			if(eventExists(event)) {
-				delete events[event][id]
+		}
+		remove(event, id) {
+			if(eventExists(this.#eventNames, event)) {
+				delete this.#events[event][id]
 			} else {
 				throw "Event " + event + " does not exist";
 			}
-		},
-		getTable: function() { return {events: helper.clone(events), eventNames: eventNames.slice()}; }
+		}
+		getTable() { 
+			return {
+				events: helper.clone(this.#events), 
+				eventNames: this.#eventNames.slice()
+			}; 
+		}
+		EmitterProxy(name) {
+			return new EmitterProxy(name, this);
+		}
+	}
+
+	function eventExists(eventNames, event) {
+		return eventNames.indexOf(event) != -1;
 	}
 
 	class EmitterProxy {
-		constructor(name) {
+		#emitter;
+		constructor(name, emitter) {
 			this._name = name;
 			this._eventNames = [];
 			this._events = {};
 			this.enabled = false;
+			this.#emitter = emitter;
 		}
 
 		registerEvent(event) {
 			this._eventNames.push(event);
 			if(this.enabled) {
-				emitter.registerEvent(event);
+				this.#emitter.registerEvent(event);
 			}
 		}
 
 		unregisterEvent(event) {
 			helper.removeByValue(this._eventNames, event);
 			if(this.enabled) {
-				emitter.unregisterEvent(event);
+				this.#emitter.unregisterEvent(event);
 			}
 		}
 
@@ -91,7 +99,7 @@ define(["helper"], function(helper) {
 			if(!helper.hasValue(this._eventNames, event)) {
 				throw "Event " + event + " does not exist or is inaccessible";
 			}
-			emitter.emit(event, ...args);
+			this.#emitter.emit(event, ...args);
   		}
 
 		on(event, id, f) {
@@ -99,7 +107,7 @@ define(["helper"], function(helper) {
 			if(!this._events[event]) this._events[event] = {};
 			this._events[event][id] = f;
 			if(this.enabled) {
-				emitter.on(event, id, f);
+				this.#emitter.on(event, id, f);
 			}
 		}
 
@@ -109,7 +117,7 @@ define(["helper"], function(helper) {
 				delete this._events[event][id];
 			}
 			if(this.enabled) {
-				emitter.remove(event, id, f);
+				this.#emitter.remove(event, id, f);
 			}
 		}
 
@@ -119,20 +127,20 @@ define(["helper"], function(helper) {
 
 		registerAll() {
 			for(let e of this._eventNames) {
-				emitter.registerEvent(e);
+				this.#emitter.registerEvent(e);
 			}
 		}
 
 		unregisterAll() {
 			for(var e of this._eventNames) {
-				emitter.unregisterEvent(e);
+				this.#emitter.unregisterEvent(e);
 			}
 		}
 
 		onAll() {
 			for(var event in this._events) {
 				for(var id in this._events[event]) {
-					emitter.on(event, id, this._events[event][id]);
+					this.#emitter.on(event, id, this._events[event][id]);
 				}
 			}
 		}
@@ -140,7 +148,7 @@ define(["helper"], function(helper) {
 		removeAll() {
 			for(var event in this._events) {
 				for(var id in this._events[event]) {
-					emitter.remove(event, id);
+					this.#emitter.remove(event, id);
 				}
 			}
 		}
@@ -160,7 +168,5 @@ define(["helper"], function(helper) {
 		}
 	}
 
-	emitter.EmitterProxy = EmitterProxy;
-
-	return emitter;
+	return Emitter;
 })

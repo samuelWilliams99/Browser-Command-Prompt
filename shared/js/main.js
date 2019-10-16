@@ -18,7 +18,7 @@ __SERVER = false;
 __CLIENT = true;
 
 requirejs(["jquery", "socket.io", "timer", "emitter"], 
-function( $,        socketio,     timer,   emitter) {
+function( $,        socketio,     t,        e) {
     var socket = socketio.connect();
 
     // Reload if lost connect (on server reload)
@@ -26,8 +26,10 @@ function( $,        socketio,     timer,   emitter) {
         location.reload();
     })
 
+    var emitter = new e();
+
     requirejs(["console", "program"], function(c, p) {
         p.setSocket(socket);
-
+        c.setEmitter(emitter);
     })
 })

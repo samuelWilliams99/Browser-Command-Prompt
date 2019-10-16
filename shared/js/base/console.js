@@ -25,11 +25,9 @@ function BgColor(r,g,b,a) {
 var lines = {};
 
 // Grab jquery
-define(["jquery", "emitter"], function($, emitter) {
+define(["jquery"], function($) {
 
-	emitter.registerEvent("console.keyDown");
-	emitter.registerEvent("console.keyUp");
-	emitter.registerEvent("console.keyPress");
+	var emitter;
 
 	var maxLines = 0;
 	var maxChars = 0;
@@ -136,7 +134,7 @@ define(["jquery", "emitter"], function($, emitter) {
 	addEvents($("#container"));
 	addEvents($(window));
 
-	return {
+	var c = {
 		setLine: function(line, ...data) {
 			lines[line] = [...data];
 			updateLines(line);
@@ -166,5 +164,14 @@ define(["jquery", "emitter"], function($, emitter) {
 		Color: Color,
 		BgColor: BgColor,
 		isKeyDown: function(key) { return keysDown[key]; },
+		setEmitter: function(e) {
+			emitter = e;
+			emitter.registerEvent("console.keyDown");
+			emitter.registerEvent("console.keyUp");
+			emitter.registerEvent("console.keyPress");
+			delete c.setEmitter;
+		}
 	}
+
+	return c;
 })

@@ -1,4 +1,7 @@
-define(["emitter", "timer", "net", "helper"], function(emitter, timer, net, helper) {
+define(["emitter", "timer", "net", "helper"], function(e, timer, net, helper) {
+
+	var emitter = new e();
+
 	var socket;
 	var processIDCounter = 0;
 	var programs = [];
@@ -85,7 +88,7 @@ define(["emitter", "timer", "net", "helper"], function(emitter, timer, net, help
 			this.#usage = usage;
 			this.#id = id;
 			// Proxies use name + id so they're unique per process
-			this.#emitter = new emitter.EmitterProxy(name + id);
+			this.#emitter = emitter.EmitterProxy(name + id);
 			this.#timer = new timer.TimerProxy(name + id);
 		}
 		setUseServer(use) {
