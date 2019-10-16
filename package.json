@@ -1,6 +1,6 @@
 {
   "name": "cmd",
-  "version": "0.7.16",
+  "version": "0.7.26",
   "description": "Web based command line simulator",
   "main": "index.js",
   "scripts": {

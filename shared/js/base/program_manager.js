@@ -1,5 +1,4 @@
 define(["emitter", "timer", "net", "helper"], function(emitter, timer, net, helper) {
-
 	var socket;
 	var processIDCounter = 0;
 	var programs = [];
@@ -127,12 +126,15 @@ define(["emitter", "timer", "net", "helper"], function(emitter, timer, net, help
 	// Socket Setter, if called for first time (socket not set beforehand), request programs and setup socket receiver
 	function setSocket(s) {
 		if(!socket) {
-			s.once("PM.getPrograms", function(ps) {
-				registerPrograms(ps);
-			});
-			s.emit("PM.requestPrograms");
+			if(__CLIENT) {
+				s.once("PM.getPrograms", function(ps) {
+					registerPrograms(ps);
+				});
+				s.emit("PM.requestPrograms");
+			}
+			net.setSocket(s);
+			socket = s;
 		}
-		socket = s;
 	}
 
 	function getProcessID() {
